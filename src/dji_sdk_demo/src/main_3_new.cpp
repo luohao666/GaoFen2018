@@ -476,7 +476,7 @@ int main(int argc, char **argv)
                         break;	
                     }
 
-                    case 0: //for parking pad 1, target_flight_height_1 = 0
+                    case 0: //for parking pad 1, target_flight_height_1 = 0 // start searching and land
                     {		       
                         if(Detection_fg) //if detecting!
                         {
@@ -509,9 +509,12 @@ int main(int argc, char **argv)
 
                     }
 
-
+		    // takeoff serach_flight_height_2 and forward set height=1.6 forward =4m 
                     case 1://take off and forward, serach_flight_height_2, cross_forward_distance12,to park
                     {
+		      
+		      drone->gimbal_angle_control ( 0,0,0,20 ); //for cross
+
                        switch(cross_state)
                         {
                         case 0:
@@ -561,7 +564,9 @@ int main(int argc, char **argv)
                        //         start_searching.data = park_or_circle_2; //for park
 														
                             }	
-													*/	
+													*/
+																	        drone->gimbal_angle_control ( 0,-900,0,20 ); 
+			      drone->gimbal_angle_control ( 0,-900,0,20 ); 
 			      for(int i = 0; i < count_to_forward12; i ++)
 			      {
 			      if(i < count_to_forward12)
@@ -570,13 +575,41 @@ int main(int argc, char **argv)
 				  drone->attitude_control(0x4B, 0, 0, 0, 0);
 			      usleep(10000);
 			      }
-					
-			      state_in_mission=2;
-                              cross_state = 0;
+				cross_state = 2;
+				//cross_state = 0;
+				//state_in_mission=2; // to land
+                        break;
+                        }
+                        
+                        case 2:
+                        {
 
+                            if (drone->flight_status==1)//standby
+                            { 
+                                drone->takeoff();  //takeoff
+                            }
+                            else if(drone->flight_status==3)//in air
+                            {
+                                if ( (ob_distance[0]<serach_flight_height_1-0.1))
+                                {
+                                    flying_height_control_tracking += 0.01; //init 0.003,speed up 
+                                }
+                                else if ( (ob_distance[0]>serach_flight_height_1+0.1)&&ob_distance[0]<5)
+                                { 
+                                    flying_height_control_tracking -= 0.01; //init 0.003
+                                }
+                                drone->attitude_control(0x9B,0,0,flying_height_control_tracking,0);
+
+                                if((ob_distance[0]>serach_flight_height_1-0.2)&&ob_distance[0]<4)
+                                {
+                                    cross_state = 0;
+				    state_in_mission=19; // to land
+                                }  
+                            }
 
                         break;
-                        }			 
+                        }
+                        
                         default:
                             break;
                         
